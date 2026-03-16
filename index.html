@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="XURRI TRACKER">
+<meta name="theme-color" content="#050505">
+<title>XURRI TRACKER</title>
+
+<script type="module">
+  import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const cfg = {
+    apiKey:            "AIzaSyC5repmxleWM4zvtilUQWTWXshPZmEMWZ0",
+    authDomain:        "xurritracker.firebaseapp.com",
+    projectId:         "xurritracker",
+    storageBucket:     "xurritracker.firebasestorage.app",
+    messagingSenderId: "310159616742",
+    appId:             "1:310159616742:web:c8f8d9f85c642dbd87e927"
+  };
+
+  const app = initializeApp(cfg);
+  const db  = getFirestore(app);
+
+  window._db         = db;
+  window._doc        = doc;
+  window._collection = collection;
+  window._getDoc     = getDoc;
+  window._setDoc     = setDoc;
+  window._onSnapshot = onSnapshot;
+  window._fsReady    = true;
+  window.dispatchEvent(new Event("fsReady"));
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;500;600;700;800;900&family=Barlow:wght@300;400;500&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:     #050505;
+  --s1:     #0e0e0e;
+  --s2:     #161616;
+  --s3:     #202020;
+  --border: #272727;
+  --bord2:  #363636;
+  --pink:   #ff2d78;
+  --blue:   #00cfff;
+  --yellow: #ffe500;
+  --text:   #f2f2f2;
+  --muted:  #555;
+  --muted2: #2e2e2e;
+  --r: 4px;
+  --fD: 'Bebas Neue', sans-serif;
+  --fC: 'Barlow Condensed', sans-serif;
+  --fB: 'Barlow', sans-serif;
+  --fM: 'Roboto Mono', monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--fB);overflow:hidden}
+
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 55% 35% at 15% 8%,  rgba(255,45,120,.07) 0%,transparent 70%),
+    radial-gradient(ellipse 40% 30% at 85% 85%, rgba(0,207,255,.05)  0%,transparent 70%);
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity:.55;
+}
+
+/* ── LAYOUT ── */
+#app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;height:-webkit-fill-available}
+#view{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+#view::-webkit-scrollbar{display:none}
+
+/* ── LOGIN ── */
+#login-screen{
+  position:fixed;inset:0;z-index:500;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;
+  padding:0 24px 60px;overflow-y:auto;
+}
+#login-screen::-webkit-scrollbar{display:none}
+.login-logo{
+  font-family:var(--fD);font-size:72px;letter-spacing:4px;
+  text-align:center;line-height:.9;margin:52px 0 8px;
+}
+.login-logo span{color:var(--pink)}
+.login-sub{
+  font-family:var(--fM);font-size:9px;letter-spacing:3px;
+  color:var(--muted);text-transform:uppercase;margin-bottom:40px;text-align:center;
+}
+.ls-title{
+  font-family:var(--fM);font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted);margin-bottom:10px;
+  width:100%;max-width:340px;
+}
+.user-btn{
+  width:100%;max-width:340px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  padding:15px 16px;cursor:pointer;margin-bottom:8px;
+  transition:border-color .15s,background .15s;
+}
+.user-btn:active{background:var(--s2);transform:scale(.98)}
+.user-btn.has-xurri{border-color:rgba(255,45,120,.25)}
+.user-btn-l{display:flex;flex-direction:column;gap:3px}
+.user-btn-name{font-family:var(--fC);font-size:22px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+.user-btn-tag{font-family:var(--fM);font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.user-btn-tag.has{color:var(--pink)}
+.user-btn-r{font-family:var(--fM);font-size:9px;letter-spacing:1px;color:var(--muted)}
+
+.divider{
+  width:100%;max-width:340px;display:flex;align-items:center;gap:10px;margin:18px 0 14px;
+}
+.divider-line{flex:1;height:1px;background:var(--border)}
+.divider-txt{font-family:var(--fM);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+
+.new-form{width:100%;max-width:340px}
+.lbl{display:block;font-family:var(--fM);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.inp{
+  width:100%;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  padding:11px 13px;color:var(--text);font-family:var(--fB);font-size:15px;
+  outline:none;transition:border-color .2s;margin-bottom:12px;
+}
+.inp:focus{border-color:var(--pink)}
+.inp::placeholder{color:var(--muted2)}
+.btn{
+  display:flex;align-items:center;justify-content:center;
+  padding:12px 18px;border-radius:var(--r);border:none;cursor:pointer;
+  font-family:var(--fC);font-size:15px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;transition:all .12s;width:100%;
+}
+.btn:active{transform:scale(.97)}
+.btn-pink{background:var(--pink);color:#fff}
+.btn-pink:active{background:#d91f64}
+.login-err{
+  font-family:var(--fM);font-size:10px;color:var(--pink);
+  text-align:center;margin-top:8px;min-height:16px;width:100%;max-width:340px;
+}
+
+/* ── NAV ── */
+#nav{
+  display:grid;grid-template-columns:repeat(2,1fr);
+  background:rgba(5,5,5,.97);border-top:1px solid var(--border);
+  backdrop-filter:blur(20px);padding-bottom:env(safe-area-inset-bottom);flex-shrink:0;
+}
+.nav-btn{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:10px 4px;background:none;border:none;color:var(--muted);cursor:pointer;
+  font-family:var(--fM);font-size:8px;letter-spacing:1px;text-transform:uppercase;transition:color .15s;
+}
+.nav-btn svg{width:22px;height:22px;stroke-width:1.8}
+.nav-btn.on{color:var(--pink)}
+
+/* ── PAGES ── */
+.page{display:none;padding:0 0 24px;min-height:100%}
+.page.on{display:block;animation:fadeUp .2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── PAGE HEADER ── */
+.ph{
+  padding:20px 16px 14px;display:flex;align-items:flex-end;justify-content:space-between;
+  position:sticky;top:0;z-index:10;
+  background:linear-gradient(to bottom,var(--bg) 75%,transparent);
+}
+.ph-title{font-family:var(--fD);font-size:46px;letter-spacing:2px;line-height:1}
+.ph-title span{color:var(--pink)}
+.ph-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.ph-user{font-family:var(--fM);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.ph-out{
+  background:none;border:1px solid var(--border);border-radius:var(--r);
+  padding:4px 8px;color:var(--muted);cursor:pointer;
+  font-family:var(--fM);font-size:8px;letter-spacing:1px;text-transform:uppercase;transition:all .15s;
+}
+.ph-out:hover{color:var(--text);border-color:var(--bord2)}
+
+/* ── TOTALS ── */
+.total-bar{display:flex;gap:8px;padding:0 16px;margin-bottom:14px}
+.total-chip{flex:1;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:10px;text-align:center}
+.tc-val{font-family:var(--fD);font-size:30px;line-height:1}
+.tc-val.v{color:var(--pink)} .tc-val.c{color:var(--blue)}
+.tc-lbl{font-family:var(--fM);font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-top:2px}
+
+/* ── BOARD ── */
+.bh{display:grid;grid-template-columns:1fr 72px 72px;gap:6px;padding:0 16px;margin-bottom:6px}
+.bh-col{font-family:var(--fM);font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-align:center}
+.bh-col:first-child{text-align:left}
+.bh-col.v{color:rgba(255,45,120,.6)} .bh-col.c{color:rgba(0,207,255,.6)}
+
+.pr{
+  display:grid;grid-template-columns:1fr 72px 72px;gap:6px;align-items:center;
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  margin:0 16px 8px;padding:13px 14px;transition:border-color .2s;
+}
+.pr.is-me{border-color:rgba(255,45,120,.4);background:rgba(255,45,120,.03)}
+.pr.leader{border-color:rgba(255,229,0,.35);background:rgba(255,229,0,.02)}
+.pr-left{display:flex;flex-direction:column;gap:3px}
+.pr-name-row{display:flex;align-items:center;gap:7px}
+.rank-b{
+  width:20px;height:20px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fD);font-size:13px;background:var(--s3);color:var(--muted);
+}
+.r1{background:rgba(255,229,0,.18);color:var(--yellow)}
+.r2{background:rgba(200,200,200,.12);color:#c8c8c8}
+.r3{background:rgba(205,127,50,.12);color:#cd7f32}
+.pr-name{font-family:var(--fC);font-size:21px;font-weight:800;letter-spacing:1px;text-transform:uppercase;line-height:1}
+.pr-meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.pill{background:var(--s3);border:1px solid var(--border);border-radius:20px;padding:1px 7px;font-family:var(--fM);font-size:7px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+.pill.xurri{background:rgba(255,45,120,.12);border-color:rgba(255,45,120,.25);color:var(--pink)}
+.pill.crown{background:rgba(255,229,0,.12);border-color:rgba(255,229,0,.25);color:var(--yellow)}
+.cnt-cell{text-align:center}
+.cnt-n{font-family:var(--fD);font-size:36px;letter-spacing:1px;line-height:1;display:block}
+.cnt-n.v{color:var(--pink)} .cnt-n.c{color:var(--blue)} .cnt-n.z{color:var(--muted2)}
+
+/* ── MY CONTROLS ── */
+.ctrl-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);margin:0 16px 10px;padding:16px}
+.ctrl-head{font-family:var(--fM);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ctrl-block{display:flex;flex-direction:column;gap:8px}
+.ctrl-lbl{font-family:var(--fC);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-align:center}
+.ctrl-lbl.v{color:var(--pink)} .ctrl-lbl.c{color:var(--blue)}
+.ctrl-row{display:flex;align-items:center;justify-content:center;gap:8px}
+.ctrl-num{font-family:var(--fD);font-size:52px;letter-spacing:1px;line-height:1;min-width:60px;text-align:center}
+.ctrl-num.v{color:var(--pink)} .ctrl-num.c{color:var(--blue)}
+.ctrl-btn{
+  width:44px;height:44px;border-radius:var(--r);border:none;cursor:pointer;
+  font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  transition:all .1s;flex-shrink:0;user-select:none;
+}
+.ctrl-btn:active{transform:scale(.88)}
+.pv{background:rgba(255,45,120,.18);color:var(--pink)} .pv:active{background:rgba(255,45,120,.38)}
+.pc{background:rgba(0,207,255,.18);color:var(--blue)}  .pc:active{background:rgba(0,207,255,.38)}
+.mb{background:var(--s3);color:var(--muted);border:1px solid var(--border)} .mb:active{background:var(--s2)}
+
+.no-xurri{
+  margin:0 16px 10px;padding:11px 14px;
+  background:rgba(255,229,0,.05);border:1px solid rgba(255,229,0,.18);border-radius:var(--r);
+  font-family:var(--fM);font-size:9px;color:rgba(255,229,0,.7);letter-spacing:.5px;line-height:1.6;
+}
+
+/* ── SPINNER ── */
+.spinner{width:26px;height:26px;border:2px solid var(--border);border-top-color:var(--pink);border-radius:50%;animation:spin .7s linear infinite;margin:48px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── ABOUT ── */
+.ac{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);margin:0 16px 10px;padding:16px}
+.at{font-family:var(--fC);font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--pink);margin-bottom:8px}
+.ab{font-family:var(--fB);font-size:13px;color:var(--muted);line-height:1.7}
+.ab strong{color:var(--text)}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(16px);
+  background:var(--s2);border:1px solid var(--bord2);border-radius:var(--r);
+  padding:8px 16px;font-family:var(--fM);font-size:10px;letter-spacing:1px;
+  color:var(--text);white-space:nowrap;opacity:0;z-index:9999;
+  transition:all .25s;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="login-screen">
+  <div class="login-logo">XURRI<br><span>TRACKER</span></div>
+  <div class="login-sub">competició de parelles · pis</div>
+
+  <div class="ls-title">Qui ets?</div>
+  <div id="login-users" style="width:100%;max-width:340px">
+    <div class="spinner"></div>
+  </div>
+
+  <div class="divider">
+    <div class="divider-line"></div>
+    <div class="divider-txt">o registra't</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <div class="new-form">
+    <label class="lbl">El teu nom</label>
+    <input class="inp" id="new-name" type="text" placeholder="el teu nom" autocomplete="off">
+    <label class="lbl">Tens xurri/xurra? (opcional)</label>
+    <input class="inp" id="new-partner" type="text" placeholder="nom de la teva parella" autocomplete="off">
+    <button class="btn btn-pink" onclick="loginRegister()">Crear perfil →</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app" style="display:none">
+  <div id="view">
+
+    <!-- PAGE: SCOREBOARD -->
+    <div class="page on" id="page-board">
+      <div class="ph">
+        <div class="ph-title">XURRI<br><span>TRACKER</span></div>
+        <div class="ph-right">
+          <div class="ph-user" id="ph-user">—</div>
+          <button class="ph-out" onclick="doLogout()">Canviar</button>
+        </div>
+      </div>
+
+      <div id="board-loading"><div class="spinner"></div></div>
+
+      <div id="board-content" style="display:none">
+        <div class="total-bar">
+          <div class="total-chip">
+            <div class="tc-val v" id="total-v">0</div>
+            <div class="tc-lbl">🏠 visites totals</div>
+          </div>
+          <div class="total-chip">
+            <div class="tc-val c" id="total-c">0</div>
+            <div class="tc-lbl">📞 trucades totals</div>
+          </div>
+        </div>
+        <div class="bh">
+          <div class="bh-col">Jugador</div>
+          <div class="bh-col v">Visites</div>
+          <div class="bh-col c">Trucades</div>
+        </div>
+        <div id="player-list"></div>
+      </div>
+
+      <!-- MY CONTROLS (shown below board) -->
+      <div id="my-controls" style="display:none;margin-top:6px">
+        <div class="ctrl-card">
+          <div class="ctrl-head" id="ctrl-head">els teus comptadors</div>
+          <div class="ctrl-grid">
+            <div class="ctrl-block">
+              <div class="ctrl-lbl v">🏠 Visites</div>
+              <div class="ctrl-row">
+                <button class="ctrl-btn mb" onclick="adjust('visits',-1)">−</button>
+                <div class="ctrl-num v" id="my-v">0</div>
+                <button class="ctrl-btn pv" onclick="adjust('visits',1)">+</button>
+              </div>
+            </div>
+            <div class="ctrl-block">
+              <div class="ctrl-lbl c">📞 Trucades</div>
+              <div class="ctrl-row">
+                <button class="ctrl-btn mb" onclick="adjust('calls',-1)">−</button>
+                <div class="ctrl-num c" id="my-c">0</div>
+                <button class="ctrl-btn pc" onclick="adjust('calls',1)">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="no-xurri" id="no-xurri-banner" style="display:none">
+          ⚠ No tens xurri/xurra registrat/da. Pots igualment sumar, però apareixeràs sense parella al rànquing.
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: INFO -->
+    <div class="page" id="page-info">
+      <div class="ph">
+        <div class="ph-title">SOBRE<br><span>L'APP</span></div>
+      </div>
+      <div class="ac">
+        <div class="at">Com funciona</div>
+        <div class="ab">
+          Cada cop que la teva xurri/xurro <strong>ve al pis</strong>, suma una visita 🏠.<br>
+          Cada cop que us <strong>parleu per telèfon</strong>, suma una trucada 📞.<br><br>
+          El marcador és <strong>compartit en temps real</strong> per a tothom. Guanya el que acumula més!
+        </div>
+      </div>
+      <div class="ac">
+        <div class="at">Jugadors del pis</div>
+        <div class="ab">
+          <strong>Marc</strong> · <strong>Jordi</strong> · <strong>Alvaro</strong> · <strong>Arnau</strong> · <strong>Jo</strong><br><br>
+          Simplement clica el teu nom per entrar. Si ets algú nou, registra't des de la pantalla d'inici!
+        </div>
+      </div>
+      <div class="ac">
+        <div class="at">Pròximament</div>
+        <div class="ab">
+          Estadístiques, gràfiques, rachas... 👀<br>De moment, a sumar punts i guanyar!
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <nav id="nav">
+    <button class="nav-btn on" id="nav-board" onclick="goPage('board')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Marcador
+    </button>
+    <button class="nav-btn" id="nav-info" onclick="goPage('info')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Info
+    </button>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────
+const USERS_DOC  = 'xurri_meta';   // doc: xurri_users/xurri_meta → { list: [...] }
+const SCORES_COL = 'xurri_scores'; // col: xurri_scores/{userId}  → { visits, calls, ... }
+
+// Usuaris predefinits del pis (la primera vegada que s'obre l'app)
+const PRESET_USERS = [
+  { id: 'marc',   name: 'Marc',   hasPartner: true,  partnerName: 'la seva xurri' },
+  { id: 'jordi',  name: 'Jordi',  hasPartner: false, partnerName: '' },
+  { id: 'alvaro', name: 'Alvaro', hasPartner: false, partnerName: '' },
+  { id: 'arnau',  name: 'Arnau',  hasPartner: true,  partnerName: 'la seva xurri' },
+  { id: 'jo',     name: 'Jo',     hasPartner: false, partnerName: '' },
+];
+
+// ── STATE ──────────────────────────────────────────────────
+let currentUser = null;
+let unsub = null;
+
+// ── UTILS ──────────────────────────────────────────────────
+const qs = id => document.getElementById(id);
+
+const waitFS = () => new Promise(r => {
+  if (window._fsReady) return r();
+  window.addEventListener('fsReady', r, { once: true });
+  setTimeout(r, 8000);
+});
+
+function showToast(msg, ms = 1500) {
+  const t = qs('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ── FETCH USERS LIST ───────────────────────────────────────
+async function fetchUsers() {
+  try {
+    const snap = await window._getDoc(
+      window._doc(window._db, 'xurri_users', USERS_DOC)
+    );
+    if (snap.exists()) return snap.data().list || [];
+  } catch(e) {}
+
+  // Fallback local
+  const local = JSON.parse(localStorage.getItem('xt_users') || 'null');
+  if (local) return local;
+
+  // Primera vegada: crea els presets
+  await saveUsersList(PRESET_USERS);
+  return PRESET_USERS;
+}
+
+async function saveUsersList(list) {
+  try {
+    await window._setDoc(
+      window._doc(window._db, 'xurri_users', USERS_DOC),
+      { list }
+    );
+  } catch(e) {}
+  localStorage.setItem('xt_users', JSON.stringify(list));
+}
+
+// ── INIT ───────────────────────────────────────────────────
+async function init() {
+  await waitFS();
+
+  // Sessió guardada?
+  const savedId = localStorage.getItem('xt_current_user');
+  if (savedId) {
+    const users = await fetchUsers();
+    const found = users.find(u => u.id === savedId);
+    if (found) { currentUser = found; startApp(); return; }
+    localStorage.removeItem('xt_current_user');
+  }
+
+  renderLoginUsers();
+}
+
+// ── LOGIN RENDER ───────────────────────────────────────────
+async function renderLoginUsers() {
+  const users = await fetchUsers();
+  const wrap = qs('login-users');
+  if (!users.length) { wrap.innerHTML = ''; return; }
+
+  wrap.innerHTML = users.map(u => `
+    <button class="user-btn ${u.hasPartner ? 'has-xurri' : ''}" onclick="loginAs('${u.id}')">
+      <div class="user-btn-l">
+        <div class="user-btn-name">${u.name}</div>
+        <div class="user-btn-tag ${u.hasPartner ? 'has' : ''}">
+          ${u.hasPartner ? '💕 ' + (u.partnerName || 'amb parella') : 'sense xurri/xurra'}
+        </div>
+      </div>
+      <div class="user-btn-r">ENTRAR →</div>
+    </button>
+  `).join('');
+}
+
+window.loginAs = async function(userId) {
+  const users = await fetchUsers();
+  const found = users.find(u => u.id === userId);
+  if (!found) return;
+  currentUser = found;
+  localStorage.setItem('xt_current_user', currentUser.id);
+  startApp();
+};
+
+window.loginRegister = async function() {
+  const name = (qs('new-name').value || '').trim();
+  if (!name) { qs('login-err').textContent = 'Escriu el teu nom!'; return; }
+
+  const partner = (qs('new-partner').value || '').trim();
+  const users = await fetchUsers();
+
+  if (users.find(u => u.name.toLowerCase() === name.toLowerCase())) {
+    qs('login-err').textContent = 'Aquest nom ja existeix!'; return;
+  }
+
+  const newUser = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+    name,
+    hasPartner: !!partner,
+    partnerName: partner
+  };
+  users.push(newUser);
+  await saveUsersList(users);
+
+  currentUser = newUser;
+  localStorage.setItem('xt_current_user', currentUser.id);
+  startApp();
+};
+
+// ── START APP ──────────────────────────────────────────────
+function startApp() {
+  qs('login-screen').style.display = 'none';
+  qs('app').style.display = 'flex';
+  qs('ph-user').textContent = currentUser.name;
+
+  if (currentUser.hasPartner && currentUser.partnerName) {
+    qs('ctrl-head').textContent = `tu i ${currentUser.partnerName}`;
+    qs('no-xurri-banner').style.display = 'none';
+  } else {
+    qs('no-xurri-banner').style.display = 'block';
+  }
+  qs('my-controls').style.display = 'block';
+
+  ensureScoreDoc();
+  subscribeBoard();
+}
+
+async function ensureScoreDoc() {
+  try {
+    const ref  = window._doc(window._db, SCORES_COL, currentUser.id);
+    const snap = await window._getDoc(ref);
+    if (!snap.exists()) {
+      await window._setDoc(ref, {
+        name:        currentUser.name,
+        hasPartner:  currentUser.hasPartner,
+        partnerName: currentUser.partnerName,
+        visits:      0,
+        calls:       0,
+        userId:      currentUser.id
+      });
+    }
+  } catch(e) {}
+}
+
+// ── REALTIME BOARD ─────────────────────────────────────────
+function subscribeBoard() {
+  if (unsub) unsub();
+  const col = window._collection(window._db, SCORES_COL);
+  unsub = window._onSnapshot(col, snap => {
+    const players = [];
+    snap.forEach(d => players.push({ id: d.id, ...d.data() }));
+    renderBoard(players);
+  });
+}
+
+function renderBoard(players) {
+  qs('board-loading').style.display = 'none';
+  qs('board-content').style.display = 'block';
+
+  // Actualitza els meus comptadors locals
+  const me = players.find(p => p.id === currentUser.id);
+  if (me) {
+    qs('my-v').textContent = me.visits || 0;
+    qs('my-c').textContent = me.calls  || 0;
+  }
+
+  // Totals globals
+  let tv = 0, tc = 0;
+  players.forEach(p => { tv += p.visits || 0; tc += p.calls || 0; });
+  qs('total-v').textContent = tv;
+  qs('total-c').textContent = tc;
+
+  // Ordenar per total desc
+  const sorted = [...players].sort((a, b) =>
+    ((b.visits||0) + (b.calls||0)) - ((a.visits||0) + (a.calls||0))
+  );
+
+  const list = qs('player-list');
+  list.innerHTML = '';
+
+  sorted.forEach((p, i) => {
+    const isMe    = p.id === currentUser.id;
+    const total   = (p.visits||0) + (p.calls||0);
+    const isLeader = i === 0 && total > 0;
+    const v = p.visits || 0;
+    const c = p.calls  || 0;
+    const rankCls = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : '';
+
+    const row = document.createElement('div');
+    row.className = 'pr' + (isMe ? ' is-me' : '') + (isLeader ? ' leader' : '');
+    row.innerHTML = `
+      <div class="pr-left">
+        <div class="pr-name-row">
+          <div class="rank-b ${rankCls}">${i + 1}</div>
+          <div class="pr-name">${p.name || '?'}${isMe ? '&nbsp;<span style="color:var(--pink);font-size:11px;font-family:var(--fM)">(tu)</span>' : ''}</div>
+        </div>
+        <div class="pr-meta">
+          ${p.hasPartner
+            ? `<span class="pill xurri">💕 ${p.partnerName || 'amb parella'}</span>`
+            : `<span class="pill">sense xurri</span>`}
+          ${isLeader ? `<span class="pill crown">👑 líder</span>` : ''}
+        </div>
+      </div>
+      <div class="cnt-cell">
+        <span class="cnt-n ${v > 0 ? 'v' : 'z'}">${v}</span>
+      </div>
+      <div class="cnt-cell">
+        <span class="cnt-n ${c > 0 ? 'c' : 'z'}">${c}</span>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+// ── ADJUST COUNTS ──────────────────────────────────────────
+async function adjust(field, delta) {
+  if (!currentUser) return;
+
+  const el     = qs(field === 'visits' ? 'my-v' : 'my-c');
+  const cur    = parseInt(el.textContent) || 0;
+  const newVal = Math.max(0, cur + delta);
+  el.textContent = newVal; // optimista
+
+  try {
+    await window._setDoc(
+      window._doc(window._db, SCORES_COL, currentUser.id),
+      {
+        [field]:     newVal,
+        name:        currentUser.name,
+        hasPartner:  currentUser.hasPartner,
+        partnerName: currentUser.partnerName,
+        userId:      currentUser.id
+      },
+      { merge: true }
+    );
+    const label = field === 'visits' ? 'Visita' : 'Trucada';
+    showToast(delta > 0 ? `+1 ${label} ✓` : `−1 ${label}`);
+  } catch(e) {
+    el.textContent = cur; // revert
+    showToast('Error al guardar 😬');
+  }
+}
+
+// ── LOGOUT ─────────────────────────────────────────────────
+function doLogout() {
+  if (!confirm('Canviar d\'usuari?')) return;
+  if (unsub) { unsub(); unsub = null; }
+  currentUser = null;
+  localStorage.removeItem('xt_current_user');
+  qs('app').style.display = 'none';
+  qs('login-screen').style.display = 'flex';
+  qs('new-name').value    = '';
+  qs('new-partner').value = '';
+  qs('login-err').textContent = '';
+  qs('board-content').style.display = 'none';
+  qs('board-loading').style.display = 'block';
+  qs('my-controls').style.display   = 'none';
+  renderLoginUsers();
+}
+
+// ── NAV ────────────────────────────────────────────────────
+function goPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('on'));
+  qs('page-' + name).classList.add('on');
+  qs('nav-'  + name).classList.add('on');
+}
+
+// ── BOOT ───────────────────────────────────────────────────
+window.loginRegister = window.loginRegister;
+window.loginAs       = window.loginAs;
+window.doLogout      = doLogout;
+window.goPage        = goPage;
+window.adjust        = adjust;
+
+init();
+</script>
+</body>
+</html>
